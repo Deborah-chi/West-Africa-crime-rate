@@ -1,0 +1,200 @@
+---
+title: "West Africa's Crime Rate"
+author: "Deborah Elesie"
+format: pdf
+date: 2026-09-19
+bibliography: reference.bib
+csl: apa.csl
+---
+
+
+## Introduction
+Crime remains a significant challenge to peace, security, and socioeconomic development across West Africa, with violent conflicts and civil strife long recognised as major destabilising forces in the region [@annan2014]. Major incidents recorded across multiple countries and cities since 1974. Understanding where crime is most concentrated, and how it varies across regions, is essential for informing policy decisions, resource allocation, and community safety interventions. 
+To read more about crimes in West Africa [Click Here](https://globalsecurityreview.com/rising-security-threats-in-west-africa-and-regional-responses/)
+
+This report presents an exploratory analysis of a simulated crime dataset covering cities in Nigeria and Cameroon. The objective is to construct the dataset from its constituent variables, classify cities into crime rate categories, and summarise key patterns; including the total number of crimes, the country with the highest crime burden, and the average number of crimes per country.
+
+The remainder of this report is organised below: 
+
+![A man being robbed in Cameroon](West_African_Crime_Image.jpg){#fig-crimeimage}
+
+## Analysis Breakdown
+
+This analysis makes use of a combination of **base R** functions and 
+functions from the **dplyr** package to create, manipulate, and 
+summarise the data.
+
+```{r}
+#| label: load-pkgs
+#| message: false
+#| warning: false
+
+library(dplyr)
+library(knitr)
+```
+
+### Creating the `country`, `city`, and `n_crime` vectors
+
+The `country` vector is created using `rep()`, which repeats each country 
+name the number of times it appears in **Table 1**. The order matches the 
+table, with `"Cameroon"` placed where it occurs between the Nigeria 
+entries.
+
+```{r}
+#| label: tbl-crimedata
+#| tbl-cap: "Crime counts by city and country"
+
+
+country <- c(rep("Nigeria", 3), "Cameroon",
+  rep("Nigeria", 3), "Cameroon", 
+  rep("Nigeria", 8), "Cameroon", 
+  rep("Nigeria", 3))
+```
+
+`length(country)` confirms the vector has 20 entries, matching the number 
+of cities in Table 1, while `unique(country)` prints the distinct 
+countries represented: Nigeria and Cameroon.
+
+```{r}
+#| label: check-country
+
+length(country)
+unique(country)
+```
+
+The `city` and `n_crime` vectors are created directly, in the same row 
+order as Table 1, so that the three vectors align correctly when combined 
+later.
+
+```{r}
+#| label: create-city-crime
+
+city <- c("Maiduguri", "Unknown", "Kano", "Bamenda",
+  "Port Harcourt", "Potiskum", "Damaturu",
+  "Unknown", "Jos", "Lagos", "Gombe", "Kaduna",
+  "Logo District", "Konduga", "Warri", "Bama",
+  "Buea", "Buni Yadi", "Damboa", "Gamboru"
+  )
+
+n_crime <- c(488, 225, 130, 87, 76, 65, 63, 55, 51,
+  46, 42, 38, 37, 36, 35, 32, 31, 30, 30, 29)
+```
+
+### Data types and structures
+
+```{r}
+#| label: types-structures
+
+## Data Type
+typeof(country)
+typeof(city)
+typeof(n_crime)
+
+## Data Structure
+str(country)
+str(city)
+str(n_crime)
+```
+
+All three objects are **atomic vectors**: `country` and `city` are of 
+type `character`, while `n_crime` is of type `double`. 
+`str()` confirms each is a vector of length 20.
+
+### Total number of crimes committed in West Africa
+The total number of crime committed is `r sum(n_crime)`
+
+### Storing the data using the function: `data.frame`
+
+Since Table 1 contains multiple variables of different types (character 
+and numeric) organised in rows and columns, the appropriate data 
+structure to store it is a **data frame**, created here using the three 
+vectors above.
+
+```{r}
+#| label: create-df
+
+crime_tbl <- data.frame(
+  country,
+  city,
+  n_crime
+)
+
+crime_tbl |> knitr::kable()
+```
+
+### Classifying crime rate
+
+Two methods are used to classify each city's `n_crime` into **High**, 
+**Medium**, or **Low**, based on Table 2.
+
+**Method 1: Using Base R `ifelse()`**
+
+```{r}
+#| label: classify-ifelse
+
+crime_tbl$crime_rate <- ifelse(
+  test = crime_tbl$n_crime >= 400,
+  yes = "High",
+  no = ifelse(
+    test = between(crime_tbl$n_crime, 100, 399),
+    yes = "Medium",
+    no = "Low"
+  )
+)
+
+crime_tbl |> knitr::kable()
+```
+
+
+**Method 2: Loading `dplyr` and using `if_else()`**
+
+```{r}
+#| label: classify-if-else
+
+crime_tbl$crime_rate <- if_else(
+  condition = crime_tbl$n_crime >= 400,
+  true = "High",
+  false = if_else(
+    condition = between(crime_tbl$n_crime, 100, 399),
+    true = "Medium",
+    false = "Low"
+  )
+)
+
+crime_tbl |> knitr::kable()
+```
+
+Both methods produce identical results. `ifelse()` is base R and needs no 
+extra package, while `if_else()` (from `dplyr`) is stricter about type 
+matching between `true` and `false`, which helps catch errors earlier.
+
+### Summary statistics
+
+#### Total and average number of crimes per country
+
+```{r}
+#| label: avg-crime-per-country
+
+crime_tbl |> 
+  summarise(
+    .by = country,
+    total_crime = sum(n_crime),
+    average_number_of_crime = mean(n_crime)
+  ) |> 
+  knitr::kable()
+```
+
+#### Country with the highest crime committed
+
+```{r}
+#| label: highest-crime
+
+crime_tbl |> 
+  summarise(
+    .by = country,
+    total_crime = sum(n_crime),
+  ) |> 
+  top_n(n = 1,
+        wt = total_crime) |> 
+   knitr::kable()
+```

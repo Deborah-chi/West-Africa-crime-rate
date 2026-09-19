@@ -10,9 +10,10 @@ country <- c(rep("Nigeria", 3), "Cameroon",
   rep("Nigeria", 8), "Cameroon", 
   rep("Nigeria", 3))
 
-length(country)
-unique(country)
+length(country)   ##Entries of the countries
+unique(country)   ##Distinct countries
 
+## Crime city and Data
 city <- c("Maiduguri", "Unknown", "Kano", "Bamenda",
   "Port Harcourt", "Potiskum", "Damaturu",
   "Unknown", "Jos", "Lagos", "Gombe", "Kaduna",
@@ -41,11 +42,17 @@ str(n_crime)
 
 sum(n_crime)
 
+
+# Storing the Data Using a DataFrame Function -----------------------------
+
 crime_tbl <- data.frame(
   country,
   city,
   n_crime
 )
+
+
+# Classifying Crime Rate --------------------------------------------------
 
 crime_tbl$crime_rate <- ifelse(
   test = crime_tbl$n_crime >= 400,
@@ -68,6 +75,9 @@ crime_tbl$crime_rate <- if_else(
   )
 )
 
+
+# Average Number of Crimes per Country --------------------------
+
 crime_tbl |> 
   summarise(
     .by = country,
@@ -76,9 +86,12 @@ crime_tbl |>
   )
 
 
+#  Country with the Highest Crime Committed -------------------------------
+
 crime_tbl |> 
   summarise(
     .by = country,
     total_crime = sum(n_crime),
   ) |> 
   top_n(n = 1, wt = total_crime)
+
